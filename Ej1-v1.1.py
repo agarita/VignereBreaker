@@ -14,19 +14,10 @@ mcds = []
 ####################################
 #           ENCRIPTAR
 ####################################
-# Obtiene el siguiente alfabeto en usar
-def siguientealfabeto(letra):
-    global estado
-    global alfabeto
-
-    index = alfabeto.index(letra)
-    
-    estado = alfabeto[index:27]+alfabeto[0:index]
-
 # Encripta usando el cifrado Vignere
 def encriptar(mensaje, llave):
-    mensaje = mensaje.lower()
-    llave = llave.lower()
+    mensaje = mensaje.lower(); llave = llave.lower()
+
     criptograma = ""
     i = 0
     
@@ -45,50 +36,52 @@ def encriptar(mensaje, llave):
 ####################################
 # Función para desencriptar con la llave
 def desencriptar(criptograma, llave):
-    criptograma = criptograma.lower()
-    llave = llave.lower()
+    criptograma = criptograma.lower(); llave = llave.lower()
+
     mensaje = ""
     i = 0
     
     for letra in criptograma:
         if i == len(llave):
-            print("-",end="")
             i = 0
         pos = alfabeto.find(letra) - alfabeto.find(llave[i])
         if pos < 0:
             pos += 27
-        print(alfabeto[pos],end="")
         mensaje += alfabeto[pos]
         i += 1
-    #return mensaje
+    return mensaje
 
-# Revisa si la repetición ya está agregada en la lista de repeticiones
+
+####################################
+#    ROMPER EL CIFRADO VIGNERE
+####################################
+# Revisa si algún n-grama ya está agregada en la lista de repeticiones
 def existe(repeticion):
     global repeticiones
 
     for rep in repeticiones:
         if rep[0] == repeticion:
             return True
-        continue
     return False
 
 # Obtiene el indice de cierta repeticion en la lista de repeticiones
 def buscar(repeticion):
     contador = 0
+    
     for rep in repeticiones:
         if rep[0] == repeticion:
             break
         contador += 1
+        
     return contador
 
 # Obtiene Maximo Comun Divisor de dos números
 def mcd(x, y):
     while(y):
         x, y = y, x % y
-
     return x
 
-# Obtiene el Maximo Comun Divisor de todas las distancias de cierto n-grama
+# Obtiene el Maximo Comun Divisor de todas las distancias de cierto n-grama, que se haya repetido en más de una ocasión
 def maximoComunDivisor():
     global repeticiones
     
@@ -99,13 +92,17 @@ def maximoComunDivisor():
                 if(distancia == val):
                     continue
                 val = mcd(val, distancia)
-            rep[2] = val;
+            rep[2] = val
 
 #Obtiene el posible largo de la clave
 def posibleLargoClave():
     global repeticiones
     global ocurrencias
     global mcds
+
+    contador = 0
+    maxOcurrencias = 0
+    longitud = 0
     
     for rep in repeticiones:
         if(rep[2]>0):
@@ -114,7 +111,17 @@ def posibleLargoClave():
                 ocurrencias += [1]
             if(rep[2] in mcds):
                 ocurrencias[mcds.index(rep[2])] += 1
-    return getLargoClave()
+
+    print("Posibles longitudes de clave\n")
+    while(contador<len(ocurrencias)):
+        if(mcds[contador] > 3 and mcds[contador] < 20 and maxOcurrencias < ocurrencias[contador]):
+            maxOcurrencias = ocurrencias[contador]
+            longitud = mcds[contador]
+        print("Longitud: ",mcds[contador], "\tOcurrencias: ", ocurrencias[contador])
+        contador += 1
+        
+    print("\nEl número con mayor cantidad de ocurrencias distinto de 1, 2 y 3(irrealista) es",longitud,"con", maxOcurrencias, "\n") 
+    return longitud
 
 # Se usa esta función para buscar en el mensaje las ocurrencias de cierto n-grama
 def analizar_aux(mensaje, ngrama):
@@ -135,6 +142,7 @@ def analizar_aux(mensaje, ngrama):
 
 def printNGramas():
     global repeticiones
+    
     n = 2
     for rep in repeticiones:
         if(len(rep[0])>n):
@@ -144,47 +152,27 @@ def printNGramas():
             print("=====================================")
         if(len(rep[1])>1):
             print(rep)
-
-def getLargoClave():
-    global ocurrencias
-    global mcds
-    print("Posibles longitudes de clave")
-    contador = 0
-
-    maxOcurrencias = 0
-    longitud = 0
-    print()
-    while(contador<len(ocurrencias)):
-        if(mcds[contador] > 3 and mcds[contador] < 20 and maxOcurrencias < ocurrencias[contador]):
-            maxOcurrencias = ocurrencias[contador]
-            longitud = mcds[contador]
-        print("Longitud: ",mcds[contador], "\tOcurrencias: ", ocurrencias[contador])
-        contador += 1
-    print("\nEl número con mayor cantidad de ocurrencias distinto de 1, 2 y 3(irrealista) es",longitud,"con", maxOcurrencias, "\n")
-    return longitud
     
-def acomodarPorLargoClave(largo):
-    global c
+def acomodarPorLargoClave(largo, criptograma):
     mensaje = [[]]
-    i = 0
-    j = 0
+    i = j = 0
+    count = 1
     
-    for letra in c:
+    for letra in criptograma:
         if i == largo:
             mensaje += [[]]
             j += 1
             i = 0
         mensaje[j] += [letra]
         i += 1
-    count = 0
 
     for block in mensaje:
-        if(count == 6):
+        if(count == largo):
             print()
-            count = 0
+            count = 1
         print(block, end="")
         count +=1
-    print()
+    print("\n")
     
     return mensaje
 
@@ -193,26 +181,27 @@ def analyze():
     global c
     global frecuencia
     global alfabeto
-    
+
     i = 3
-    # Analiza el criptograma en busqueda de n-gramas de 1 a 3
-    while(i<=16):
+    # Analiza el criptograma en busqueda de n-gramas de 3 a 8 caracteres
+    while(i<=8):
         analizar_aux(c, i)
         i += 1
 
-    # Obtiene el Maximo Comun Divisor de las distancias
+    # Calcula el Maximo Comun Divisor de las distancias
     maximoComunDivisor()
-
     printNGramas()
+    
     # Imprime las posibles longitudes de claves
     largoLlave = posibleLargoClave()
 
-    mensaje = acomodarPorLargoClave(largoLlave)
-
     print("Division del criptograma según la longitud obtenida:")
+    mensaje = acomodarPorLargoClave(largoLlave, c)
+    
     results = []
     submensaje = ""
     i = 0
+    
     while i < largoLlave:
         for block in mensaje:
             if(len(block)<largoLlave):
@@ -223,9 +212,8 @@ def analyze():
         submensaje = ""
         i += 1
 
-    print("Frecuencias por carácter y por columna:")
-    key = ""
     i = 0
+    print("Frecuencias de carácter por cada columna: (caracter, frecuencia en columna, frecuencia en columna multiplicado a la frecuencia letra en alfabeto español)")
     while i < 27:
         key = ""
         for res in results:
@@ -236,10 +224,9 @@ def analyze():
             else:
                 letra = res.most_common()[i][0]
                 frec = res.most_common()[i][1]
-                print(letra,'%.1f'%(frec*frecuencia[alfabeto.find(letra)]), end = "\t\t")
-                key += letra
+                print(letra, frec, '%.1f'%(frec*frecuencia[alfabeto.find(letra)]), end = "   \t")
                 if res == results[-1]:
                     print()
         i += 1
-        #print("\n",key)
+
 analyze()
